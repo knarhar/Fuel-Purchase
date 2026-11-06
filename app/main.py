@@ -3,6 +3,7 @@ from fastapi import FastAPI
 
 from app import models
 from app.database import Base, engine
+from app.routers import admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -10,13 +11,4 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="Fuel Purchase API", lifespan=lifespan)
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+app.include_router(admin.router)

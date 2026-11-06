@@ -16,3 +16,6 @@ __pycache__/
 
 # SQLite database
 *.db
+
+# MacOS configs
+.DS_Store

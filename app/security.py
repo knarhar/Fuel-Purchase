@@ -28,3 +28,15 @@ def require_admin(
     if admin is None:
         raise HTTPException(403, "Invalid admin API key.")
     return admin
+
+
+def get_current_user(
+    x_username: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> User:
+    if not x_username:
+        raise HTTPException(400, "Missing X-Username header.")
+    user = db.scalar(select(User).where(User.username == x_username))
+    if user is None:
+        raise HTTPException(404, "User not found.")
+    return user

@@ -1,10 +1,13 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, PastDate
 
 Money = Annotated[Decimal, Field(ge=0, max_digits=12, decimal_places=2)]
+Litres = Annotated[Decimal, Field(ge=0, max_digits=12, decimal_places=2)]
+PositiveLitres = Annotated[Decimal, Field(gt=0, max_digits=12, decimal_places=2)]
+
 Name = Annotated[str, Field(min_length=1, max_length=100)]
 Username = Annotated[str, Field(min_length=1, max_length=50)]
 
@@ -12,13 +15,13 @@ Username = Annotated[str, Field(min_length=1, max_length=50)]
 class ProductCreate(BaseModel):
     name: Name
     price_per_litre: Money
-    available_litres: Money
+    available_litres: Litres
 
 
 class ProductUpdate(BaseModel):
     name: Name | None = None
     price_per_litre: Money | None = None
-    available_litres: Money | None = None
+    available_litres: Litres | None = None
 
 
 class ProductOut(BaseModel):
@@ -55,3 +58,25 @@ class UserOut(BaseModel):
     username: str
     birthdate: date
     account_balance: Decimal
+
+
+class PurchaseCreate(BaseModel):
+    product_id: int
+    litres: PositiveLitres
+
+
+class PurchaseCreated(BaseModel):
+    id: int
+    product: str
+    litres: PositiveLitres
+    total_price: Money
+    remaining_balance: Money
+    remaining_stock_litres: Litres
+
+
+class PurchaseOut(BaseModel):
+    id: int
+    product: str
+    litres: Decimal
+    total_price: Decimal
+    created_at: datetime

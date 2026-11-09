@@ -24,7 +24,7 @@ def update_product(product_id: int, data: ProductUpdate, db: Session = Depends(g
     product = db.get(Product, product_id)
     if product is None:
         raise HTTPException(404, "Product not found.")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
     db.commit()
     db.refresh(product)
@@ -53,7 +53,7 @@ def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(404, "User not found.")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(user, field, value)
     save_user(db)
     db.refresh(user)

@@ -1,6 +1,9 @@
+from datetime import timezone
 from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -8,7 +11,7 @@ from app.models import User, Product, Purchase
 from app.schemas import PurchaseCreated, PurchaseCreate, PurchaseOut
 from app.security import get_current_user
 
-router = APIRouter(tags=["Purchases"], dependencies=[Depends(get_current_user)])
+router = APIRouter(tags=["Purchases"])
 
 
 @router.post("/", response_model=PurchaseCreated, status_code=201)
@@ -30,14 +33,18 @@ def buy_fuel(
     if total_price > user.account_balance:
         raise HTTPException(400, "Insufficient balance.")
 
-    user.account_balance -= total_price
-    product.available_litres -= data.litres
+    user.account_balance = func.round(User.account_balance - total_price, 2)
+    product.available_litres = func.round(Product.available_litres - data.litres, 2)
 
     purchase = Purchase(
         user_id=user.id, product_id=product.id, litres=data.litres, total_price=total_price
     )
     db.add(purchase)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "Insufficient balance or fuel. Please try again.")
 
     return PurchaseCreated(
         id=purchase.id,
@@ -68,7 +75,7 @@ def get_purchases(
             product=p.product.name,
             litres=p.litres,
             total_price=p.total_price,
-            created_at=p.created_at,
+            created_at=p.created_at.replace(tzinfo=timezone.utc),
         )
         for p in purchases
     ]
